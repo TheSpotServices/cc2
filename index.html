@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>Create City 2</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -61,7 +61,7 @@
 <body>
 
     <div class="login-container">
-        <h2>Login</h2>
+        <h2>Please login to the Create City 2 Web portal</h2>
         <div class="input-group">
             <label for="password">Password</label>
             <input type="password" id="password" placeholder="Enter Password" required>
@@ -76,7 +76,7 @@
         function login() {
             const password = document.getElementById('password').value;
 
-            if (password === 'ebsadmin') {
+            if (password === 'fma_login') {
                 window.location.href = 'fmaadmin.html'; // Redirect to admin page
             } else if (password === 'civilian') {
                 window.location.href = 'civilian.html'; // Redirect to civilian page
