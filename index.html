@@ -33,7 +33,7 @@
             margin-bottom: 5px;
             font-weight: bold;
         }
-        .input-group input {
+        .input-group input, .input-group select {
             width: 100%;
             padding: 10px;
             border-radius: 5px;
@@ -68,6 +68,20 @@
         }
         .login-container input {
             margin-bottom: 10px;
+        }
+        #viewAccountsPage table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        #viewAccountsPage th, #viewAccountsPage td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ccc;
+        }
+        #viewAccountsPage th {
+            background-color: #4CAF50;
+            color: white;
         }
     </style>
 </head>
@@ -120,11 +134,79 @@
             <input type="file" id="uploadFile" accept=".json">
             <button onclick="uploadJSON()">Upload Data (JSON)</button>
         </div>
+
+        <div class="input-group">
+            <button onclick="viewAllAccounts()">View All Accounts</button>
+        </div>
+
+        <div class="input-group">
+            <button onclick="viewLoansPage()">Loans</button>
+        </div>
+    </div>
+
+    <!-- View All Accounts Page -->
+    <div id="viewAccountsPage" class="container" style="display: none;">
+        <h2>All Accounts</h2>
+        <table id="accountsTable">
+            <thead>
+                <tr>
+                    <th>Account ID</th>
+                    <th>Account Name</th>
+                    <th>Balance</th>
+                </tr>
+            </thead>
+            <tbody id="accountsBody">
+                <!-- Account rows will go here -->
+            </tbody>
+        </table>
+        <div class="input-group">
+            <button onclick="goBackToAccountPage()">Back to Account Management</button>
+        </div>
+    </div>
+
+    <!-- Loans Page -->
+    <div id="loansPage" class="container" style="display: none;">
+        <h2>Loan Management</h2>
+        <div class="input-group">
+            <label for="loanAccountID">Account ID</label>
+            <select id="loanAccountID">
+                <!-- Accounts will be populated here -->
+            </select>
+        </div>
+        
+        <div class="input-group">
+            <label for="loanAmount">Loan Amount</label>
+            <input type="number" id="loanAmount" placeholder="Enter Loan Amount" required>
+        </div>
+        
+        <div class="input-group">
+            <button onclick="applyLoan()">Apply Loan</button>
+        </div>
+
+        <div class="input-group">
+            <button onclick="payOnTime()">Pay on Time (+10 points)</button>
+            <button onclick="stayOutOfDebt()">Stay Out of Debt (+30 points)</button>
+            <button onclick="debt()">In Debt (-40 points)</button>
+            <button onclick="loanOnTime()">Loan Paid on Time (+40 points)</button>
+        </div>
+
+        <div class="result" id="loanResult"></div>
+
+        <div class="input-group">
+            <label for="creditScore">Credit Score</label>
+            <input type="number" id="creditScore" value="100" disabled>
+        </div>
+        
+        <div class="input-group">
+            <button onclick="goBackToAccountPage()">Back to Account Management</button>
+        </div>
     </div>
 
     <script>
         const correctPassword = 'ebsadmin';
         let accounts = {};
+        let loans = {};
+        let currentCreditScore = 100;
 
         function login() {
             const password = document.getElementById('password').value;
@@ -193,6 +275,104 @@
                 }
             };
             reader.readAsText(file);
+        }
+
+        // Function to view all accounts in a table
+        function viewAllAccounts() {
+            document.getElementById('accountPage').style.display = 'none';
+            document.getElementById('viewAccountsPage').style.display = 'block';
+
+            const accountsBody = document.getElementById('accountsBody');
+            accountsBody.innerHTML = ''; // Clear existing table data
+
+            for (const accountID in accounts) {
+                if (accounts.hasOwnProperty(accountID)) {
+                    const account = accounts[accountID];
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${accountID}</td>
+                        <td>${account.name}</td>
+                        <td>$${account.balance.toFixed(2)}</td>
+                    `;
+                    accountsBody.appendChild(row);
+                }
+            }
+        }
+
+        // Function to go back to account management page
+        function goBackToAccountPage() {
+            document.getElementById('viewAccountsPage').style.display = 'none';
+            document.getElementById('loansPage').style.display = 'none';
+            document.getElementById('accountPage').style.display = 'block';
+        }
+
+        // Function to go to the loans page
+        function viewLoansPage() {
+            document.getElementById('accountPage').style.display = 'none';
+            document.getElementById('loansPage').style.display = 'block';
+
+            const loanAccountSelect = document.getElementById('loanAccountID');
+            loanAccountSelect.innerHTML = ''; // Clear options
+            for (const accountID in accounts) {
+                if (accounts.hasOwnProperty(accountID)) {
+                    const option = document.createElement('option');
+                    option.value = accountID;
+                    option.textContent = accounts[accountID].name;
+                    loanAccountSelect.appendChild(option);
+                }
+            }
+        }
+
+        // Function to apply for a loan
+        function applyLoan() {
+            const accountID = document.getElementById('loanAccountID').value;
+            const loanAmount = parseFloat(document.getElementById('loanAmount').value);
+
+            if (!accountID || isNaN(loanAmount)) {
+                document.getElementById('loanResult').innerHTML = '<p class="error">Please enter a valid account and loan amount.</p>';
+                return;
+            }
+
+            if (!accounts[accountID]) {
+                accounts[accountID] = {
+                    balance: 0,
+                    name: 'Unnamed Account'
+                };
+            }
+
+            accounts[accountID].balance += loanAmount;
+            loans[accountID] = loans[accountID] || { totalLoan: 0 };
+            loans[accountID].totalLoan += loanAmount;
+
+            document.getElementById('loanResult').innerHTML = `
+                <p>Loan Applied to Account ID: ${accountID}</p>
+                <p>New Balance: $${accounts[accountID].balance.toFixed(2)}</p>
+            `;
+        }
+
+        // Credit score functions
+        function payOnTime() {
+            currentCreditScore += 10;
+            updateCreditScore();
+        }
+
+        function stayOutOfDebt() {
+            currentCreditScore += 30;
+            updateCreditScore();
+        }
+
+        function debt() {
+            currentCreditScore -= 40;
+            updateCreditScore();
+        }
+
+        function loanOnTime() {
+            currentCreditScore += 40;
+            updateCreditScore();
+        }
+
+        function updateCreditScore() {
+            document.getElementById('creditScore').value = currentCreditScore;
         }
     </script>
 
