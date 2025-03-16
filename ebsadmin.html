@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credit Card System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 400px;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        .input-group button {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+        }
+        .input-group button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .result p {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .error {
+            color: red;
+        }
+        .login-container {
+            width: 300px;
+        }
+        .login-container input {
+            margin-bottom: 10px;
+        }
+        #viewAccountsPage table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        #viewAccountsPage th, #viewAccountsPage td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ccc;
+        }
+        #viewAccountsPage th {
+            background-color: #4CAF50;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Login Page -->
+    <div id="loginPage" class="login-container">
+        <h2>Login</h2>
+        <div class="input-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" placeholder="Enter Password" required>
+        </div>
+        <div class="input-group">
+            <button onclick="login()">Login</button>
+        </div>
+        <div id="loginError" class="error"></div>
+    </div>
+
+    <!-- Main Page (Account Management) -->
+    <div id="accountPage" class="container" style="display: none;">
+        <h2>Credit Card System</h2>
+        
+        <div class="input-group">
+            <label for="accountID">Account ID</label>
+            <input type="number" id="accountID" placeholder="Enter Account ID" required>
+        </div>
+        
+        <div class="input-group">
+            <label for="accountName">Account Name</label>
+            <input type="text" id="accountName" placeholder="Enter Account Name" required>
+        </div>
+        
+        <div class="input-group">
+            <label for="amount">Amount</label>
+            <input type="number" id="amount" placeholder="Enter Amount" required>
+        </div>
+        
+        <div class="input-group">
+            <button onclick="updateBalance()">Update Account</button>
+        </div>
+
+        <div class="result" id="result"></div>
+
+        <!-- File Upload and Download buttons -->
+        <div class="input-group">
+            <button onclick="downloadJSON()">Download Data (JSON)</button>
+        </div>
+        
+        <div class="input-group">
+            <input type="file" id="uploadFile" accept=".json">
+            <button onclick="uploadJSON()">Upload Data (JSON)</button>
+        </div>
+
+        <div class="input-group">
+            <button onclick="viewAllAccounts()">View All Accounts</button>
+        </div>
+
+        <div class="input-group">
+            <button onclick="viewLoansPage()">Loans</button>
+        </div>
+    </div>
+
+    <!-- View All Accounts Page -->
+    <div id="viewAccountsPage" class="container" style="display: none;">
+        <h2>All Accounts</h2>
+        <table id="accountsTable">
+            <thead>
+                <tr>
+                    <th>Account ID</th>
+                    <th>Account Name</th>
+                    <th>Balance</th>
+                </tr>
+            </thead>
+            <tbody id="accountsBody">
+                <!-- Account rows will go here -->
+            </tbody>
+        </table>
+        <div class="input-group">
+            <button onclick="goBackToAccountPage()">Back to Account Management</button>
+        </div>
+    </div>
+
+    <!-- Loans Page -->
+    <div id="loansPage" class="container" style="display: none;">
+        <h2>Loan Management</h2>
+        <div class="input-group">
+            <label for="loanAccountID">Account ID</label>
+            <select id="loanAccountID">
+                <!-- Accounts will be populated here -->
+            </select>
+        </div>
+        
+        <div class="input-group">
+            <label for="loanAmount">Loan Amount</label>
+            <input type="number" id="loanAmount" placeholder="Enter Loan Amount" required>
+        </div>
+        
+        <div class="input-group">
+            <button onclick="applyLoan()">Apply Loan</button>
+        </div>
+
+        <div class="input-group">
+            <button onclick="payOnTime()">Pay on Time (+10 points)</button>
+            <button onclick="stayOutOfDebt()">Stay Out of Debt (+30 points)</button>
+            <button onclick="debt()">In Debt (-40 points)</button>
+            <button onclick="loanOnTime()">Loan Paid on Time (+40 points)</button>
+        </div>
+
+        <div class="result" id="loanResult"></div>
+
+        <div class="input-group">
+            <label for="creditScore">Credit Score</label>
+            <input type="number" id="creditScore" value="100" disabled>
+        </div>
+        
+        <div class="input-group">
+            <button onclick="goBackToAccountPage()">Back to Account Management</button>
+        </div>
+    </div>
+
+    <script>
+        const correctPassword = 'ebs.key';
+        let accounts = {};
+        let loans = {};
+        let currentCreditScore = 100;
+
+        function login() {
+            const password = document.getElementById('password').value;
+            if (password === correctPassword) {
+                document.getElementById('loginPage').style.display = 'none';
+                document.getElementById('accountPage').style.display = 'block';
+            } else {
+                document.getElementById('loginError').textContent = 'Incorrect password!';
+            }
+        }
+
+        function updateBalance() {
+            const accountID = document.getElementById('accountID').value;
+            const accountName = document.getElementById('accountName').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+
+            if (!accountID || isNaN(amount)) {
+                document.getElementById('result').innerHTML = '<p class="error">Please enter valid Account ID and Amount.</p>';
+                return;
+            }
+
+            if (!accounts[accountID]) {
+                accounts[accountID] = {
+                    balance: 0,
+                    name: accountName || 'Unnamed Account'
+                };
+            }
+
+            accounts[accountID].balance += amount;
+
+            document.getElementById('result').innerHTML = `
+                <p>Account ID: ${accountID}</p>
+                <p>Account Name: ${accounts[accountID].name}</p>
+                <p>Updated Balance: $${accounts[accountID].balance.toFixed(2)}</p>
+            `;
+        }
+
+        // Function to download account data as JSON
+        function downloadJSON() {
+            const dataStr = JSON.stringify(accounts, null, 4);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'accounts.json';
+            link.click();
+        }
+
+        // Function to upload account data from a JSON file
+        function uploadJSON() {
+            const fileInput = document.getElementById('uploadFile');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert('Please select a file to upload.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    accounts = data;
+                    document.getElementById('result').innerHTML = '<p>Data successfully uploaded and parsed.</p>';
+                } catch (error) {
+                    document.getElementById('result').innerHTML = '<p class="error">Invalid JSON format.</p>';
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Function to view all accounts in a table
+        function viewAllAccounts() {
+            document.getElementById('accountPage').style.display = 'none';
+            document.getElementById('viewAccountsPage').style.display = 'block';
+
+            const accountsBody = document.getElementById('accountsBody');
+            accountsBody.innerHTML = ''; // Clear existing table data
+
+            for (const accountID in accounts) {
+                if (accounts.hasOwnProperty(accountID)) {
+                    const account = accounts[accountID];
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${accountID}</td>
+                        <td>${account.name}</td>
+                        <td>$${account.balance.toFixed(2)}</td>
+                    `;
+                    accountsBody.appendChild(row);
+                }
+            }
+        }
+
+        // Function to go back to account management page
+        function goBackToAccountPage() {
+            document.getElementById('viewAccountsPage').style.display = 'none';
+            document.getElementById('loansPage').style.display = 'none';
+            document.getElementById('accountPage').style.display = 'block';
+        }
+
+        // Function to go to the loans page
+        function viewLoansPage() {
+            document.getElementById('accountPage').style.display = 'none';
+            document.getElementById('loansPage').style.display = 'block';
+
+            const loanAccountSelect = document.getElementById('loanAccountID');
+            loanAccountSelect.innerHTML = ''; // Clear options
+            for (const accountID in accounts) {
+                if (accounts.hasOwnProperty(accountID)) {
+                    const option = document.createElement('option');
+                    option.value = accountID;
+                    option.textContent = accounts[accountID].name;
+                    loanAccountSelect.appendChild(option);
+                }
+            }
+        }
+
+        // Function to apply for a loan
+        function applyLoan() {
+            const accountID = document.getElementById('loanAccountID').value;
+            const loanAmount = parseFloat(document.getElementById('loanAmount').value);
+
+            if (!accountID || isNaN(loanAmount)) {
+                document.getElementById('loanResult').innerHTML = '<p class="error">Please enter a valid account and loan amount.</p>';
+                return;
+            }
+
+            if (!accounts[accountID]) {
+                accounts[accountID] = {
+                    balance: 0,
+                    name: 'Unnamed Account'
+                };
+            }
+
+            accounts[accountID].balance += loanAmount;
+            loans[accountID] = loans[accountID] || { totalLoan: 0 };
+            loans[accountID].totalLoan += loanAmount;
+
+            document.getElementById('loanResult').innerHTML = `
+                <p>Loan Applied to Account ID: ${accountID}</p>
+                <p>New Balance: $${accounts[accountID].balance.toFixed(2)}</p>
+            `;
+        }
+
+        // Credit score functions
+        function payOnTime() {
+            currentCreditScore += 10;
+            updateCreditScore();
+        }
+
+        function stayOutOfDebt() {
+            currentCreditScore += 30;
+            updateCreditScore();
+        }
+
+        function debt() {
+            currentCreditScore -= 40;
+            updateCreditScore();
+        }
+
+        function loanOnTime() {
+            currentCreditScore += 40;
+            updateCreditScore();
+        }
+
+        function updateCreditScore() {
+            document.getElementById('creditScore').value = currentCreditScore;
+        }
+    </script>
+
+</body>
+</html>
