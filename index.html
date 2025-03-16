@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credit System</title>
+    <script>
+        let accounts = {};
+        let loggedIn = false;
+
+        function login() {
+            const password = prompt("Enter password:");
+            if (password === "admin") {
+                loggedIn = true;
+                document.getElementById("main").style.display = "block";
+                document.getElementById("login").style.display = "none";
+            } else {
+                alert("Incorrect password!");
+            }
+        }
+
+        function generateAccount() {
+            const id = Math.floor(100000 + Math.random() * 900000);
+            accounts[id] = { balance: 0 };
+            alert("Account created with ID: " + id);
+            updateDisplay();
+        }
+
+        function updateBalance() {
+            const id = document.getElementById("accountId").value;
+            const amount = parseFloat(document.getElementById("amount").value);
+            const type = document.querySelector('input[name="action"]:checked').value;
+
+            if (!accounts[id]) {
+                alert("Account ID not found.");
+                return;
+            }
+
+            if (type === "add") {
+                accounts[id].balance += amount;
+            } else if (type === "remove") {
+                if (accounts[id].balance >= amount) {
+                    accounts[id].balance -= amount;
+                } else {
+                    alert("Insufficient funds!");
+                    return;
+                }
+            }
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            let output = "<h3>Accounts</h3><ul>";
+            for (let id in accounts) {
+                output += `<li>ID: ${id} - Balance: $${accounts[id].balance.toFixed(2)}</li>`;
+            }
+            output += "</ul>";
+            document.getElementById("accountList").innerHTML = output;
+        }
+
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(accounts, null, 2));
+            const downloadAnchor = document.createElement("a");
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "accounts.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                accounts = JSON.parse(e.target.result);
+                updateDisplay();
+            };
+            reader.readAsText(file);
+        }
+    </script>
+</head>
+<body>
+    <div id="login">
+        <button onclick="login()">Login</button>
+    </div>
+    <div id="main" style="display: none;">
+        <h2>Credit Card System</h2>
+        <button onclick="generateAccount()">Generate Account</button>
+        <br><br>
+        <input type="text" id="accountId" placeholder="Enter Account ID">
+        <input type="number" id="amount" placeholder="Enter Amount">
+        <br>
+        <input type="radio" name="action" value="add" checked> Add
+        <input type="radio" name="action" value="remove"> Remove
+        <br>
+        <button onclick="updateBalance()">Submit</button>
+        <br><br>
+        <button onclick="exportData()">Download Accounts</button>
+        <input type="file" onchange="importData(event)">
+        <br><br>
+        <div id="accountList"></div>
+    </div>
+</body>
+</html>
